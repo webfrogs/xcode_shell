@@ -1,0 +1,149 @@
+#!/bin/bash
+
+#--------------------------------------------
+# 功能：为xcode工程打ipa包，并创建发布文件
+# 作者：ccf
+# E-mail:ccf.developer@gmail.com
+# 创建日期：2012/09/24
+#--------------------------------------------
+
+
+
+#须配置内容  start
+
+#发布应用的url地址
+pulish_url="http://webfrogs.github.com/urls/"
+
+#可配置内容  end
+
+#参数判断
+if [ $# != 2 ];then
+	echo "Params error!"
+	echo "Need two params: 1.path of project 2.name of ipa file"
+	exit
+elif [ ! -d $1 ];then
+	echo "The first param is not a dictionary."
+	exit	
+	
+fi
+
+
+#工程绝对路径
+cd $1
+project_path=$(pwd)
+
+#IPA名称
+ipa_name=$2
+
+#build文件夹路径
+build_path=${project_path}/build
+
+#编译工程
+cd $project_path
+xcodebuild || exit
+
+#打包
+cd $build_path
+if [ -d ./ipa-build ];then
+	rm -rf ipa-build
+fi
+mkdir -p ipa-build/Payload
+cp -r ./Release-iphoneos/*.app ./ipa-build/Payload/
+cd ipa-build
+zip -r ${ipa_name}.ipa *
+rm -rf Payload
+
+
+#生成发布文件
+
+cd $project_path
+#取版本号
+bundleVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleShortVersionString" `find . -name "*-Info.plist"`)
+#取bundle Identifier前缀
+bundlePrefix=$(/usr/libexec/PlistBuddy -c "print CFBundleIdentifier" `find . -name "*-Info.plist"` | awk -F$ '{print $1}')
+
+#拷贝ipa
+cd $build_path
+target_name=$(basename ./Release-iphoneos/*.app | awk -F. '{print $1}')
+if [ -d ./$target_name ];then
+	rm -rf $target_name
+fi
+mkdir $target_name
+cp ./ipa-build/*.ipa ./$target_name/${target_name}.ipa
+cp ../Icon@2x.png ./$target_name/${target_name}_logo.png
+cd $target_name
+#生成install.html文件
+cat << EOF > index.html
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>安装此软件</title>
+  </head>
+  <body>
+	<br>
+	<br>
+	<br>
+	<br>
+	<p align=center>
+		<font size="8">
+			<a href="itms-services://?action=download-manifest&url=${pulish_url}${target_name}.plist">点击这里安装</a>
+		</font>
+	</p>
+	
+    </div>
+  </body>
+</html>
+EOF
+#生成plist文件
+cat << EOF > ${target_name}.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+   <key>items</key>
+   <array>
+       <dict>
+           <key>assets</key>
+           <array>
+               <dict>
+                   <key>kind</key>
+                   <string>software-package</string>
+                   <key>url</key>
+                   <string>${pulish_url}/${target_name}/${target_name}.ipa</string>
+               </dict>
+               <dict>
+                   <key>kind</key>
+                   <string>display-image</string>
+                   <key>needs-shine</key>
+                   <true/>
+                   <key>url</key>
+                   <string>${pulish_url}/${target_name}/${target_name}_logo.png</string>
+               </dict>
+	       <dict>
+                   <key>kind</key>
+                   <string>full-size-image</string>
+                   <key>needs-shine</key>
+                   <true/>
+                   <key>url</key>
+                   <string>${pulish_url}/${target_name}/${target_name}_logo.png</string>
+               </dict>
+           </array><key>metadata</key>
+           <dict>
+               <key>bundle-identifier</key>
+               <string>${bundlePrefix}${target_name}</string>
+               <key>bundle-version</key>
+               <string>${bundleVersion}</string>
+               <key>kind</key>
+               <string>software</string>
+               <key>subtitle</key>
+               <string>${ipa_name}</string>
+               <key>title</key>
+               <string>${ipa_name}</string>
+           </dict>
+       </dict>
+   </array>
+</dict>
+</plist>
+
+EOF

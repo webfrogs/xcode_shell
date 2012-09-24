@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#--------------------------------------------
+# 功能：为xcode工程打ipa包
+# 作者：ccf
+# E-mail:ccf.developer@gmail.com
+# 创建日期：2012/09/24
+#--------------------------------------------
+
+
+#参数判断
+if [ $# != 2 ];then
+	echo "Params error!"
+	echo "Need two params: 1.path of project 2.name of ipa file"
+	exit
+elif [ ! -d $1 ];then
+	echo "The first param is not a dictionary."
+	exit	
+	
+fi
+
+
+#工程绝对路径
+cd $1
+project_path=$(pwd)
+
+#IPA名称
+ipa_name=$2
+
+#build文件夹路径
+build_path=${project_path}/build
+
+
+#编译工程
+cd $project_path
+xcodebuild || exit
+
+#打包
+cd $build_path
+if [ -d ./ipa-build ];then
+	rm -rf ipa-build
+fi
+mkdir -p ipa-build/Payload
+cp -r ./Release-iphoneos/*.app ./ipa-build/Payload/
+cd ipa-build
+zip -r ${ipa_name}.ipa *
+rm -rf Payload
+
