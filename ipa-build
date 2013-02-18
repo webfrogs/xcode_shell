@@ -2,21 +2,38 @@
 
 #--------------------------------------------
 # 功能：为xcode工程打ipa包
+# 使用说明：第一个参数为xcode工程根路径，第二个参数是编译配置（可选，默认为Release）
 # 作者：ccf
 # E-mail:ccf.developer@gmail.com
 # 创建日期：2012/09/24
 #--------------------------------------------
+# 修改日期：2013/02/18
+# 修改人：ccf
+# 修改内容：打包方式改为使用xcrun命令，并修改第二个参数
+#--------------------------------------------
+
 
 
 #参数判断
 if [ $# != 2 ] && [ $# != 1 ];then
 	echo "Number of params error! Need one or two params!"
-	echo "1.path of project(necessary) 2.name of ipa file(optional)"
+	echo "1.path of project(necessary) 2.Build Configurations  one of Debug, AdHoc,Release， Distribution (Release is default)"
 	exit	
 elif [ ! -d $1 ];then
 	echo "Params Error!! The first param must be a dictionary."
 	exit	
 fi
+
+build_config=Release
+
+if [ $# = 2 ];then
+	build_config=$2
+	if [ $build_config != Debug ] && [ $build_config != AdHoc ] && [ $build_config != Release ] && [ $build_config != Distribution ];then
+		echo "Error! The Second Param must be one of Debug, AdHoc,Release or Distribution"
+		exit
+	fi
+fi
+
 
 #工程绝对路径
 cd $1
@@ -24,40 +41,42 @@ project_path=$(pwd)
 #build文件夹路径
 build_path=${project_path}/build
 
-#工程配置文件路径
-project_name=$(ls | grep xcodeproj | awk -F.xcodeproj '{print $1}')
-project_infoplist_path=${project_path}/${project_name}/${project_name}-Info.plist
-#取版本号
-bundleShortVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleShortVersionString" ${project_infoplist_path})
-#取build值
-bundleVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleVersion" ${project_infoplist_path})
-#取bundle Identifier前缀
-#bundlePrefix=$(/usr/libexec/PlistBuddy -c "print CFBundleIdentifier" `find . -name "*-Info.plist"` | awk -F$ '{print $1}')
-
-
-#IPA名称
-if [ $# = 2 ];then
-ipa_name=$2
-fi
-
 
 #编译工程
 cd $project_path
-xcodebuild || exit
+xcodebuild -configuration ${build_config} || exit
 
-#打包
+#进入build路径
 cd $build_path
-target_name=$(basename ./Release-iphoneos/*.app | awk -F. '{print $1}')
-if [ $# = 1 ];then
-ipa_name="${target_name}_${bundleShortVersion}_build${bundleVersion}_$(date +"%Y%m%d")"
-fi
 
+#创建ipa-build文件夹
 if [ -d ./ipa-build ];then
 	rm -rf ipa-build
 fi
-mkdir -p ipa-build/Payload
-cp -r ./Release-iphoneos/*.app ./ipa-build/Payload/
-cd ipa-build
-zip -r ${ipa_name}.ipa *
-rm -rf Payload
+mkdir ipa-build
+
+
+#生成的app文件目录
+appdirname=Release-iphoneos
+if [ $build_config = Debug ];then
+	appdirname=Debug-iphoneos
+fi
+
+#app文件名称
+appname=$(basename ./${appdirname}/*.app)
+#通过app文件名获得工程target名字
+target_name=$(echo $appname | awk -F. '{print $1}')
+#app文件中Info.plist文件路径
+app_infoplist_path=${build_path}/${appdirname}/${appname}/Info.plist
+#取版本号
+bundleShortVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleShortVersionString" ${app_infoplist_path})
+#取build值
+bundleVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleVersion" ${app_infoplist_path})
+
+#IPA名称
+ipa_name="${target_name}_${bundleShortVersion}_${build_config}${bundleVersion}_$(date +"%Y%m%d")"
+echo $ipa_name
+
+#xcrun打包
+xcrun -sdk iphoneos PackageApplication -v ./${appdirname}/*.app -o ${build_path}/ipa-build/${ipa_name}.ipa
 

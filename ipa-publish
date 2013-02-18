@@ -10,12 +10,17 @@
 # 修改人：ccf
 # 修改内容：去掉打包的部分脚本，只保留生成协议文件部分，以后此脚本依赖ipa-build脚本
 #--------------------------------------------
+# 修改日期：2013/02/18
+# 修改人：ccf
+# 修改内容：添加通过sftp上传到服务器的功能
+#--------------------------------------------
+
 
 
 #须配置内容  start
 
 #发布应用的url地址
-pulish_url="http://webfrogs.github.com/urls/"
+pulish_url="http://192.168.81.236/test"
 
 #可配置内容  end
 
@@ -60,27 +65,49 @@ fi
 #build文件夹路径
 build_path=${project_path}/build
 
-#工程配置文件路径
-project_name=$(ls | grep xcodeproj | awk -F.xcodeproj '{print $1}')
-project_infoplist_path=${project_path}/${project_name}/${project_name}-Info.plist
+#切换到tmp文件夹
+cd /tmp
+#创建临时文件夹
+tmpfoldername=ipa_tmp
+if [ -d ./${tmpfoldername} ];then
+	rm -rf ${tmpfoldername}
+fi
+mkdir ${tmpfoldername}
+
+cd ${tmpfoldername}
+#拷贝ipa到临时文件夹中
+cp ${build_path}/ipa-build/*.ipa ./tmp.zip
+#将ipa解压
+unzip tmp.zip
+#app文件中Info.plist文件路径
+app_infoplist_path=$(pwd)/Payload/*.app/Info.plist
+#取版本号
+#bundleShortVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleShortVersionString" ${app_infoplist_path})
 #取build值
-bundleVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleVersion" ${project_infoplist_path})
-#取bundle Identifier前缀
-bundlePrefix=$(/usr/libexec/PlistBuddy -c "print CFBundleIdentifier" `find . -name "*-Info.plist"` | awk -F$ '{print $1}')
+bundleVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleVersion" ${app_infoplist_path})
+#取bundleIdentifier
+bundleIdentifier=$(/usr/libexec/PlistBuddy -c "print CFBundleIdentifier" ${app_infoplist_path})
+#取CFBundleName
+target_name=$(/usr/libexec/PlistBuddy -c "print CFBundleName" ${app_infoplist_path})
+#取CFBundleDisplayName
+display_name=$(/usr/libexec/PlistBuddy -c "print CFBundleDisplayName" ${app_infoplist_path})
 
-#生成发布文件
+#删除临时文件夹
+cd ..
+rm -rf ${tmpfoldername}
 
-#拷贝ipa
+#进入到工程build路径下
 cd $build_path
-target_name=$(basename ./Release-iphoneos/*.app | awk -F. '{print $1}')
+
 if [ $# = 1 ];then
-ipa_name="${target_name}"
+ipa_name="${display_name}"
 fi
 
 if [ -d ./$target_name ];then
 	rm -rf $target_name
 fi
 mkdir $target_name
+#拷贝ipa
 cp ./ipa-build/*.ipa ./$target_name/${target_name}.ipa
 cp ../Icon@2x.png ./$target_name/${target_name}_logo.png
 cd $target_name
@@ -99,7 +126,7 @@ cat << EOF > index.html
 	<br>
 	<p align=center>
 		<font size="8">
-			<a href="itms-services://?action=download-manifest&url=${pulish_url}${target_name}.plist">点击这里安装</a>
+			<a href="itms-services://?action=download-manifest&url=${pulish_url}/${target_name}/${target_name}.plist">点击这里安装</a>
 		</font>
 	</p>
 	
@@ -143,7 +170,7 @@ cat << EOF > ${target_name}.plist
            </array><key>metadata</key>
            <dict>
                <key>bundle-identifier</key>
-               <string>${bundlePrefix}${target_name}</string>
+               <string>${bundleIdentifier}</string>
                <key>bundle-version</key>
                <string>${bundleVersion}</string>
                <key>kind</key>
@@ -159,3 +186,6 @@ cat << EOF > ${target_name}.plist
 </plist>
 
 EOF
+
+#调用upload脚本来将文件上传到服务器
+~/shell/upload $target_name

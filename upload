@@ -1,0 +1,56 @@
+#!/usr/bin/expect -f
+
+#--------------------------------------------
+# 功能：先在服务器指定路径下新建文件夹，并将脚本所在路径下所有文件通过sftp协议上传到该文件夹中。
+# 使用说明：命令后带一个参数，表示在服务器中新建文件夹的名字。注意：目前该脚本无参数验证功能，必须有该参数，否则脚本运行结果会发生错误
+# 作者：ccf
+# E-mail:ccf.developer@gmail.com
+# 创建日期：2013/02/17
+#--------------------------------------------
+
+
+#参数设置
+set filefolder [lindex $argv 0]
+set host 192.168.*.*
+set username root
+set password ***
+set hostfilepath /usr/
+
+
+#sftp连接
+spawn sftp $username@$host
+
+#第一次sftp时需输入yes
+expect {
+    "(yes/no)?" {send "yes\r"; exp_continue}
+    "password:" {send "$password\r"}
+}
+
+#切换到所要放置的目录下
+expect "sftp>"
+send "cd $hostfilepath\r"
+
+#判断文件夹是否已经存在，若不存在，则新建。之后进入到文件夹中
+expect "sftp>"
+send "ls $filefolder\r"
+expect {
+    "No such file or directory" {send "mkdir $filefolder\r"; exp_continue}
+    "sftp>" {send "cd $filefolder\r"}
+}
+
+#删除文件夹中所有文件
+expect "sftp>"
+send "rm *\r"
+
+#将当前路径下所有文件上传
+expect "sftp>"
+send "put ./*\r"
+
+#退出sftp
+expect "sftp>"
+send "bye\r"
+
+interact
+
+
+
