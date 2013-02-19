@@ -11,11 +11,10 @@
 
 #参数设置
 set filefolder [lindex $argv 0]
-set host 192.168.*.*
+set host 192.168.**.**
 set username root
-set password ***
-set hostfilepath /usr/
-
+set password ****
+set hostfilepath /usr/**/**/**/**
 
 #sftp连接
 spawn sftp $username@$host
