@@ -8,7 +8,7 @@
 #--------------------------------------------
 # 修改日期：2012/09/27
 # 修改人：ccf
-# 修改内容：去掉打包的部分脚本，只保留生成协议文件部分，以后此脚本依赖ipa-build脚本
+# 修改内容：去掉打包的部分脚本，只保留生成协议文件部分，以后此脚本依赖ipa-build脚本生成的内容
 #--------------------------------------------
 # 修改日期：2013/02/18
 # 修改人：ccf
@@ -18,29 +18,42 @@
 # 修改人：ccf
 # 修改内容：添加上传服务器后邮件提醒功能
 #--------------------------------------------
+# 修改日期：2013/02/27
+# 修改人：ccf
+# 修改内容：添加更新服务器上工程索引文件功能
+#--------------------------------------------
 
 
+
+
+#获取当前shell文件所在的绝对路径
+shell_path=$(dirname $0)
 
 
 #须配置内容  start
 
-#存放该shell文件夹的路径
-shell_path=~/shell
+#sftp参数设置
+sftp_server=192.168.xx.xx
+sftp_username=xx
+sftp_password=xx
+sftp_workpath="/usr/share/xx/xx/xx"
+
+
 
 #发布应用的url地址
-pulish_url="http://**.com/"
+pulish_url="http://xx.com/xx"
 
 #以下是邮箱的相关设置
 #收件人
-email_reciver=**@**
+email_reciver=xx@xx.com
 #发送者邮箱
-email_sender=**@**
+email_sender=xx@xx.com
 #邮箱用户名
-email_username=**
+email_username=xx
 #邮箱密码
-email_password=**
+email_password=xx
 #smtp服务器地址
-email_smtphost=**
+email_smtphost=smtp.exmail.qq.com
 
 
 #可配置内容  end
@@ -109,7 +122,7 @@ unzip tmp.zip
 #app文件中Info.plist文件路径
 app_infoplist_path=$(pwd)/Payload/*.app/Info.plist
 #取版本号
-#bundleShortVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleShortVersionString" ${app_infoplist_path})
+bundleShortVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleShortVersionString" ${app_infoplist_path})
 #取build值
 bundleVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleVersion" ${app_infoplist_path})
 #取bundleIdentifier
@@ -138,6 +151,12 @@ mkdir $target_name
 cp ./ipa-build/*.ipa ./$target_name/${target_name}.ipa
 cp ../Icon@2x.png ./$target_name/${target_name}_logo.png
 cd $target_name
+
+#ipa下载url
+ipa_download_url=${pulish_url}/${target_name}/${target_name}.ipa
+#itms-services协议串
+ios_install_url="itms-services://?action=download-manifest&url=${pulish_url}/${target_name}/${target_name}.plist"
+
 #生成install.html文件
 cat << EOF > index.html
 <!DOCTYPE HTML>
@@ -153,7 +172,7 @@ cat << EOF > index.html
 	<br>
 	<p align=center>
 		<font size="8">
-			<a href="itms-services://?action=download-manifest&url=${pulish_url}/${target_name}/${target_name}.plist">点击这里安装</a>
+			<a href="${ios_install_url}">点击这里安装</a>
 		</font>
 	</p>
 	
@@ -176,7 +195,7 @@ cat << EOF > ${target_name}.plist
                    <key>kind</key>
                    <string>software-package</string>
                    <key>url</key>
-                   <string>${pulish_url}/${target_name}/${target_name}.ipa</string>
+                   <string>${ipa_download_url}</string>
                </dict>
                <dict>
                    <key>kind</key>
@@ -215,7 +234,20 @@ cat << EOF > ${target_name}.plist
 EOF
 
 #调用upload脚本来将文件上传到服务器
-${shell_path}/upload $target_name || exit
+${shell_path}/uploadItemsServicesFiles $target_name ${sftp_server} ${sftp_username} ${sftp_password} ${sftp_workpath} || exit
+
+#切换到tmp目录下
+serverIndexHtmlName=index.html
+cd /tmp
+rm ${serverIndexHtmlName}
+#从服务器下载index.html
+${shell_path}/sftpDownloadFile ${serverIndexHtmlName} ${sftp_server} ${sftp_username} ${sftp_password} ${sftp_workpath} || exit
+#更新index.html
+${shell_path}/updateLocalIndexHtml ${display_name} ${bundleShortVersion} ${ipa_download_url} ${ios_install_url} || exit
+#上传index.html
+${shell_path}/sftpUploadFile ${serverIndexHtmlName} ${sftp_server} ${sftp_username} ${sftp_password} ${sftp_workpath} || exit
+
+
 
 #发送邮件
 if [ $should_email = y ];then

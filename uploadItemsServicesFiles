@@ -2,7 +2,13 @@
 
 #--------------------------------------------
 # 功能：先在服务器指定路径下新建文件夹，并将脚本所在路径下所有文件通过sftp协议上传到该文件夹中。
-# 使用说明：命令后带一个参数，表示在服务器中新建文件夹的名字。注意：目前该脚本无参数验证功能，必须有该参数，否则脚本运行结果会发生错误
+# 使用说明：命令有5个参数。注意：目前该脚本无参数验证功能，必须5个参数，否则脚本运行结果会发生错误
+#			参数1：服务器中新建文件夹的名字；
+#			参数2：服务器地址
+#			参数3：sftp用户名
+#			参数4：sftp密码
+#			参数5：sftp工作路径
+#			
 # 作者：ccf
 # E-mail:ccf.developer@gmail.com
 # 创建日期：2013/02/17
@@ -11,10 +17,11 @@
 
 #参数设置
 set filefolder [lindex $argv 0]
-set host 192.168.**.**
-set username root
-set password ****
-set hostfilepath /usr/**/**/**/**
+set host [lindex $argv 1]
+set username [lindex $argv 2]
+set password [lindex $argv 3]
+set hostfilepath [lindex $argv 4]
+
 
 #sftp连接
 spawn sftp $username@$host
@@ -28,6 +35,7 @@ expect {
 #切换到所要放置的目录下
 expect "sftp>"
 send "cd $hostfilepath\r"
+
 
 #判断文件夹是否已经存在，若不存在，则新建。之后进入到文件夹中
 expect "sftp>"
@@ -49,7 +57,4 @@ send "put ./*\r"
 expect "sftp>"
 send "bye\r"
 
-interact
-
-
-
+expect eof
