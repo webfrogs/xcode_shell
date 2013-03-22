@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#--------------------------------------------
+# 功能：为当前路径下所有jpg和png图片添加@2x命名
+# 使用说明：切换到需要转换的目录，然后运行脚本
+# 作者：ccf
+# E-mail:ccf.developer@gmail.com
+# 创建日期：2013/03/22
+#--------------------------------------------
+
+for file in `ls` 
+do  
+	if [ ! -d $file ];then
+
+		filename=${file%.*}
+		extension=${file##*.}
+
+		#不包含后缀
+		if [ $filename = $extension ];then
+			continue
+		fi
+
+		#判断是否已经有@2x
+		subname=${filename%@2x}
+		if [ $subname != $filename ];then
+			continue
+		fi
+
+
+		#添加@2x
+		if [ $extension = png ] || [ $extension = jpg ];then
+			mv $file ${filename}@2x.${extension}
+		fi
+	fi
+		  
+done
