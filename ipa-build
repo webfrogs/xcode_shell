@@ -2,7 +2,10 @@
 
 #--------------------------------------------
 # 功能：为xcode工程打ipa包
-# 使用说明：第一个参数为xcode工程根路径，第二个参数是编译配置（可选，默认为Release）
+# 使用说明：ipa-build <project directory> [-c <project configuration>] [-o <ipa output directory>] [-n]
+# 参数说明：-c NAME				工程的configuration,默认为Release。
+#			-o PATH				生成的ipa文件输出的文件夹（必须为已存在的文件路径）默认为工程根路径下的”build/ipa-build“文件夹中
+#			-n					编译前是否先clean工程
 # 作者：ccf
 # E-mail:ccf.developer@gmail.com
 # 创建日期：2012/09/24
@@ -11,28 +14,83 @@
 # 修改人：ccf
 # 修改内容：打包方式改为使用xcrun命令，并修改第二个参数
 #--------------------------------------------
+# 修改日期：2013/04/25
+# 修改人：ccf
+# 修改内容：采用getopts来处理命令参数，并增加编译前清除选项
+#--------------------------------------------
 
 
 
-#参数判断
-if [ $# != 2 ] && [ $# != 1 ];then
-	echo "Number of params error! Need one or two params!"
-	echo "1.path of project(necessary) 2.Build Configurations  one of Debug, AdHoc,Release， Distribution (Release is default)"
-	exit	
-elif [ ! -d $1 ];then
-	echo "Params Error!! The first param must be a dictionary."
-	exit	
+
+if [ $# -lt 1 ];then
+	echo "Error! Should enter the root directory of xcode project after the ipa-build command."
+	exit 2
+fi
+
+if [ ! -d $1 ];then
+	echo "Error! The first param must be a directory."
+	exit 2
 fi
 
 build_config=Release
 
-if [ $# = 2 ];then
-	build_config=$2
-	if [ $build_config != Debug ] && [ $build_config != AdHoc ] && [ $build_config != Release ] && [ $build_config != Distribution ];then
-		echo "Error! The Second Param must be one of Debug, AdHoc,Release or Distribution"
-		exit
-	fi
-fi
+param_pattern=":nc:o:"
+OPTIND=2
+while getopts $param_pattern optname
+  do
+    case "$optname" in
+	  "n")        
+		should_clean=y		
+        ;;
+      "c")        
+		tmp_optind=$OPTIND
+		tmp_optname=$optname
+		tmp_optarg=$OPTARG
+		OPTIND=$OPTIND-1
+		if getopts $param_pattern optname ;then
+			echo  "Error argument value for option $tmp_optname"
+			exit 2
+		fi
+		OPTIND=$tmp_optind
+
+		build_config=$tmp_optarg
+		
+        ;;
+      "o")
+		tmp_optind=$OPTIND
+		tmp_optname=$optname
+		tmp_optarg=$OPTARG
+
+		OPTIND=$OPTIND-1
+		if getopts $param_pattern optname ;then
+			echo  "Error argument value for option $tmp_optname"
+			exit 2
+		fi
+		OPTIND=$tmp_optind
+
+		cd $tmp_optarg
+		output_path=$(pwd)
+		if [ ! -d $output_path ];then
+			echo "Error!The value of option o must be an exist directory."
+			exit 2
+		fi
+
+        ;;
+      "?")
+        echo "Error! Unknown option $OPTARG"
+		exit 2
+        ;;
+      ":")
+        echo "Error! No argument value for option $OPTARG"
+		exit 2
+        ;;
+      *)
+      # Should not occur
+        echo "Error! Unknown error while processing options"
+		exit 2
+        ;;
+    esac
+  done
 
 
 #工程绝对路径
@@ -41,6 +99,10 @@ project_path=$(pwd)
 #build文件夹路径
 build_path=${project_path}/build
 
+
+if [ "$should_clean" = "y" ];then
+	xcodebuild clean
+fi
 
 #编译工程
 cd $project_path
@@ -78,5 +140,9 @@ ipa_name="${target_name}_${bundleShortVersion}_${build_config}${bundleVersion}_$
 echo $ipa_name
 
 #xcrun打包
-xcrun -sdk iphoneos PackageApplication -v ./${appdirname}/*.app -o ${build_path}/ipa-build/${ipa_name}.ipa
+xcrun -sdk iphoneos PackageApplication -v ./${appdirname}/*.app -o ${build_path}/ipa-build/${ipa_name}.ipa || exit
 
+if [ "$output_path" != "" ];then
+	cp ${build_path}/ipa-build/${ipa_name}.ipa $output_path/${ipa_name}.ipa
+	echo "Copy ipa file successfully to the path $output_path/${ipa_name}.ipa"
+fi
