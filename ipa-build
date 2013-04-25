@@ -2,9 +2,10 @@
 
 #--------------------------------------------
 # 功能：为xcode工程打ipa包
-# 使用说明：ipa-build <project directory> [-c <project configuration>] [-o <ipa output directory>] [-n]
+# 使用说明：ipa-build <project directory> [-c <project configuration>] [-o <ipa output directory>] [-t <target name>] [-n]
 # 参数说明：-c NAME				工程的configuration,默认为Release。
 #			-o PATH				生成的ipa文件输出的文件夹（必须为已存在的文件路径）默认为工程根路径下的”build/ipa-build“文件夹中
+#			-t NAME				需要编译的target的名称
 #			-n					编译前是否先clean工程
 # 作者：ccf
 # E-mail:ccf.developer@gmail.com
@@ -21,7 +22,6 @@
 
 
 
-
 if [ $# -lt 1 ];then
 	echo "Error! Should enter the root directory of xcode project after the ipa-build command."
 	exit 2
@@ -34,7 +34,7 @@ fi
 
 build_config=Release
 
-param_pattern=":nc:o:"
+param_pattern=":nc:o:t:"
 OPTIND=2
 while getopts $param_pattern optname
   do
@@ -76,6 +76,23 @@ while getopts $param_pattern optname
 		fi
 
         ;;
+	  "t")
+		tmp_optind=$OPTIND
+		tmp_optname=$optname
+		tmp_optarg=$OPTARG
+
+		OPTIND=$OPTIND-1
+		if getopts $param_pattern optname ;then
+			echo  "Error argument value for option $tmp_optname"
+			exit 2
+		fi
+		OPTIND=$tmp_optind
+
+		build_target=$tmp_optarg
+		
+		
+        ;;
+
       "?")
         echo "Error! Unknown option $OPTARG"
 		exit 2
@@ -106,7 +123,14 @@ fi
 
 #编译工程
 cd $project_path
-xcodebuild -configuration ${build_config} || exit
+build_cmd='xcodebuild -configuration '${build_config}
+
+if [ "$build_target" != "" ];then
+	build_cmd=$build_cmd' -target '$build_target
+fi
+
+
+$build_cmd || exit
 
 #进入build路径
 cd $build_path
@@ -146,3 +170,4 @@ if [ "$output_path" != "" ];then
 	cp ${build_path}/ipa-build/${ipa_name}.ipa $output_path/${ipa_name}.ipa
 	echo "Copy ipa file successfully to the path $output_path/${ipa_name}.ipa"
 fi
+# 修改内容：#--------------------------------------------
