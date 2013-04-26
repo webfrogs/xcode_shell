@@ -9,7 +9,10 @@ Necessary
 ===========
 
 -----
-To use scripts of this repository, you should install the "Command Line Tools" in the setting of xcode first.
+
+* Mac OS X
+* "Command Line Tools" of xcode
+
 
 
 Detail
@@ -25,15 +28,27 @@ You can do this by using "ipa-build" shell script.
 
 Usage: 
 
-	ipa-build <project directory> [-c <project configuration>] [-o <ipa output directory>] [-n]
+	ipa-build <project directory> [-c <project configuration>] [-o <ipa output directory>] [-t <target name>] [-n]
 
 Options:
 
 	-c NAME		the configuration of project used to compile.Default is Release
 	-o PATH		output path for ipa file(must be a directory)
+	-t NAME		the target which should be compiled
 	-n			clean the project before compling
 	
-If script executed successfully,an ipa file is created in the path: <project path>/build/ipa-build.
+Example:
+If you have an iOS project in the path ~/iphone, and the ipa-build script is put in the path ~/xcode-shell.You want to build this project with 'Release' configuration.Just use script like this:
+
+	cd ~/iphone
+	~/xcode-shell/ipa-build .
+
+If the script runs successfully,you will found an ipa file in the directory ~/iphone/build/ipa-build. 
+
+If you want to assign configuration or target, you can add some options to the command.
+	
+	Note:If script executed successfully,an ipa file is created in the path: <project path>/build/ipa-build.
+
 
 
 ####2.publish project
