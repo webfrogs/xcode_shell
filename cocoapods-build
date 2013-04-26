@@ -2,10 +2,9 @@
 
 #--------------------------------------------
 # 功能：为使用了CocoaPods的工程打ipa包
-# 使用说明：第一个参数为工程根路径，第二个参数是编译配置（可选，默认为Release）
+# 使用说明：	cocoapods-build <cococapods project path> [<build configuration>]
 # 作者：ccf
 # E-mail:ccf.developer@gmail.com
-# 创建日期：2013/04/22
 #--------------------------------------------
 
 
@@ -20,56 +19,31 @@ elif [ ! -d $1 ];then
 	exit	
 fi
 
-build_config=Release
 
-if [ $# = 2 ];then
-	build_config=$2
-fi
+#获取shell文件所在的绝对路径
+current_path=$(pwd)
+tmp_path=$(dirname $0)
+cd $tmp_path
+shell_path=$(pwd)
+cd $current_path
+
 
 
 #工程绝对路径
 cd $1
 project_path=$(pwd)
-#build文件夹路径
-build_path=${project_path}/build
-#生成的app文件目录
-appdirname=iphoneos
-#编译后文件路径
-compiled_path=${build_path}/${appdirname}
 #获取工程默认scheme的名字（默认与工程文件名字相同）
 scheme_name=$(echo $(basename ./*.xcodeproj) | awk -F. '{print $1}')
 
 
-#编译工程
-cd $project_path
-#xcodebuild -configuration ${build_config} || exit
-xcodebuild -workspace *.xcwork* -scheme ${scheme_name} -configuration ${build_config} CONFIGURATION_BUILD_DIR=${compiled_path} ONLY_ACTIVE_ARCH=NO || exit
+build_cmd=${shell_path}'/ipa-build '${project_path}' -w -s '${scheme_name}
 
-#进入build路径
-cd $build_path
-
-#创建ipa-build文件夹
-if [ -d ./ipa-build ];then
-	rm -rf ipa-build
+if [ $# = 2 ];then
+	build_cmd=${build_cmd}' -c '$2
 fi
-mkdir ipa-build
 
 
-#app文件名称
-appname=$(basename ./${appdirname}/*.app)
-#通过app文件名获得工程target名字
-target_name=$(echo $appname | awk -F. '{print $1}')
-#app文件中Info.plist文件路径
-app_infoplist_path=${build_path}/${appdirname}/${appname}/Info.plist
-#取版本号
-bundleShortVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleShortVersionString" ${app_infoplist_path})
-#取build值
-bundleVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleVersion" ${app_infoplist_path})
+#编译工程
+${build_cmd} 
 
-#IPA名称
-ipa_name="${target_name}_${bundleShortVersion}_${build_config}${bundleVersion}_$(date +"%Y%m%d")"
-echo $ipa_name
-
-#xcrun打包
-xcrun -sdk iphoneos PackageApplication -v ./${appdirname}/*.app -o ${build_path}/ipa-build/${ipa_name}.ipa
 
