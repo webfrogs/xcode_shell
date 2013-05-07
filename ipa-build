@@ -174,7 +174,7 @@ build_cmd='xcodebuild'
 
 if [ "$build_workspace" != "" ];then
 	#编译workspace
-	if ["$build_scheme" = ""];then
+	if [ "$build_scheme" = "" ];then
 		echo "Error! Must provide a scheme by -s option together when using -w option to compile a workspace."
 		exit 2
 	fi
