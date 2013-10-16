@@ -203,10 +203,11 @@ $build_cmd || exit
 cd $build_path
 
 #创建ipa-build文件夹
-if [ -d ./ipa-build ];then
-	rm -rf ipa-build
+if [ ! -d ./ipa-build ];then
+#	rm -rf ipa-build
+	mkdir ipa-build
 fi
-mkdir ipa-build
+#mkdir ipa-build
 
 
 
