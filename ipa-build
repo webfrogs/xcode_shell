@@ -164,7 +164,7 @@ fi
 compiled_path=${build_path}/${appdirname}
 
 #是否clean
-if [ "$build_config" = "y" ];then
+if [ "$should_clean" = "y" ];then
 	xcodebuild clean
 fi
 
