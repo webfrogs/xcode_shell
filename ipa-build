@@ -160,11 +160,14 @@ appdirname=Release-iphoneos
 if [ $build_config = Debug ];then
 	appdirname=Debug-iphoneos
 fi
+if [ $build_config = Distribute ];then
+	appdirname=Distribute-iphoneos
+fi
 #编译后文件路径(仅当编译workspace时才会用到)
 compiled_path=${build_path}/${appdirname}
 
 #是否clean
-if [ "$build_config" = "y" ];then
+if [ "$should_clean" = "y" ];then
 	xcodebuild clean
 fi
 
