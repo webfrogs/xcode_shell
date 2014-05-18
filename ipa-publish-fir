@@ -1,0 +1,201 @@
+#!/bin/bash
+
+#--------------------------------------------
+# 功能：上传ipa 到 fir.im，并可以发送邮件给相关人
+# 注意：该脚本上传的ipa依赖于ipa-build脚本生成的目录结构和文件
+# 作者：ccf & jiecao.fm
+# E-mail:zhoujun@jiecao.fm
+# 创建日期：2012/09/24
+#--------------------------------------------
+# 修改日期：2012/09/27
+# 修改人：ccf
+# 修改内容：去掉打包的部分脚本，只保留生成协议文件部分，以后此脚本依赖ipa-build脚本生成的内容
+#--------------------------------------------
+# 修改日期：2013/02/18
+# 修改人：ccf
+# 修改内容：添加通过sftp上传到服务器的功能
+#--------------------------------------------
+# 修改日期：2013/02/19
+# 修改人：ccf
+# 修改内容：添加上传服务器后邮件提醒功能
+#--------------------------------------------
+# 修改日期：2013/02/27
+# 修改人：ccf
+# 修改内容：添加更新服务器上工程索引文件功能
+#--------------------------------------------
+# 修改日期：2014/05/17
+# 修改人：Shannon Chou
+# 修改内容：在原ipa-publish 的基础上改为ipa-publish-fir，用于将app 发布到fir.im上测试
+#--------------------------------------------
+
+#须配置内容  start
+
+#以下是邮箱的相关设置，jiecao.fm 提供了一个可以直接使用的邮箱账号，请不要去更改邮箱密码，以便他人使用
+#更改收件人就可直接使用
+#收件人，多个收件人以空格分隔
+email_reciver="zhoujun@jiecao.fm shannonchou@sina.com"
+#发送者邮箱
+email_sender=xcodeshell@jiecao.fm
+#邮箱用户名
+email_username=xcodeshell@jiecao.fm
+#邮箱密码
+email_password=jiecao.fm1
+#smtp服务器地址
+email_smtphost=smtp.exmail.qq.com
+
+
+#可配置内容  end
+
+
+#fir 相关url
+fir_domain="http://fir.im"
+fir_lookup_url="$fir_domain/api/upload_url"
+fir_finish_url="$fir_domain/api/finish"
+
+#获取shell文件所在的绝对路径
+current_path=$(pwd)
+tmp_path=$(dirname $0)
+cd $tmp_path
+shell_path=$(pwd)
+cd $current_path
+
+
+
+#参数判断
+if [ $# != 2 ] && [ $# != 1 ];then
+	echo "Number of params error! Need one or two params!"
+	echo "1.root path of project(necessary) 2.should send email after upload?y/n(default is n)"
+	exit
+elif [ ! -d $1 ];then
+	echo "The param must be a dictionary."
+	exit	
+	
+fi
+
+should_email=n
+
+if [ $# = 2 ];then
+	should_email=$2
+	if [ $should_email != y ] && [ $should_email != n ];then
+		echo "Error! The Second Param must be y or n!"
+		exit
+	fi
+fi
+
+
+
+#工程绝对路径
+cd $1
+project_path=$(pwd)
+
+#判断所输入路径是否是xcode工程的根路径
+ls | grep .xcodeproj > /dev/null
+rtnValue=$?
+if [ $rtnValue != 0 ];then
+	echo "Error!! The param must be the root path of a xcode project."
+	exit
+fi
+
+#判断是否执行过ipa-build脚本
+ls ./build/ipa-build/*.ipa &>/dev/null
+rtnValue=$?
+if [ $rtnValue != 0 ];then
+	echo "Error!! No ipa files exists.Please run the \"ipa-build\" shell script first"
+	exit
+fi
+
+
+#build文件夹路径
+build_path=${project_path}/build
+
+echo "Fetching app infomation from the ipa file..."
+#切换到tmp文件夹
+cd /tmp
+#创建临时文件夹
+tmpfoldername=ipa_tmp
+if [ -d ./${tmpfoldername} ];then
+	rm -rf ${tmpfoldername}
+fi
+mkdir ${tmpfoldername}
+
+cd ${tmpfoldername}
+#拷贝ipa到临时文件夹中
+cp ${build_path}/ipa-build/*.ipa ./tmp.zip
+#将ipa解压
+unzip tmp.zip &>/dev/null
+#app文件中Info.plist文件路径
+app_infoplist_path=$(pwd)/Payload/*.app/Info.plist
+#取版本号
+bundleShortVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleShortVersionString" ${app_infoplist_path})
+#取build值
+bundleVersion=$(/usr/libexec/PlistBuddy -c "print CFBundleVersion" ${app_infoplist_path})
+#取bundleIdentifier
+bundleIdentifier=$(/usr/libexec/PlistBuddy -c "print CFBundleIdentifier" ${app_infoplist_path})
+#取CFBundleName
+target_name=$(/usr/libexec/PlistBuddy -c "print CFBundleName" ${app_infoplist_path})
+#取CFBundleDisplayName
+display_name=$(/usr/libexec/PlistBuddy -c "print CFBundleDisplayName" ${app_infoplist_path})
+
+#删除临时文件夹
+cd ..
+rm -rf ${tmpfoldername}
+
+#进入到工程build路径下
+cd $build_path
+
+#显示名称
+ipa_name="${display_name}"
+
+if [ -d ./$target_name ];then
+	rm -rf $target_name
+fi
+mkdir $target_name
+#拷贝ipa
+cp ./ipa-build/*.ipa ./$target_name/${target_name}.ipa
+cp ../Icon@2x.png ./$target_name/${target_name}_logo.png
+cd $target_name
+
+#获取git的提交日志
+echo "Fetching the git log..."
+git_log=`git log --pretty=format:"%s" -10 | tr -d " " | awk '{printf "%s<br/>",$1}'`
+
+#到fir api 查询具体的包上传地址
+echo "Fetching upload url from fir..."
+response=`curl -L "$fir_lookup_url?appid=$bundleIdentifier"`
+#网络请求结果判断
+rtnValue=$?
+if [ $rtnValue != 0 ];then
+exit 1
+fi
+
+fir_publish_url=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['postFile']"`
+fir_publish_icon_url=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['postIcon']"`
+fir_publish_short_name=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
+
+#上传ipa包，并获取最终的url short name
+echo "Uploading the ipa file..."
+curl -LT ${target_name}.ipa "$fir_publish_url"
+rtnValue=$?
+if [ $rtnValue != 0 ];then
+exit 1
+fi
+
+echo "Finishing uploading and filling in the app information..."
+response=`curl -L "$fir_finish_url?appid=$bundleIdentifier&short=$fir_publish_short_name&version=$bundleShortVersion($bundleVersion)&changelog=$git_log"`
+realShort=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
+
+#拼接完整的下载url，并在浏览器中打开
+pulish_url=$fir_domain/$realShort
+open $pulish_url
+
+
+#发送邮件
+#将之前html的换行方式改为\n
+git_log=`echo ${git_log//<br\/>/\\\n}`
+if [ $should_email = y ];then
+    echo "Sending email..."
+	email_title="${ipa_name}-iOS客户端更新"
+	email_content="hi,\n\nThe app is updated recently. Use the safari browser on iOS device to download the app. Here is the URL: ${pulish_url} \n\nChange log:\n$git_log \n\n\nThis email is sent by the automantic shell which is created by ccf & jiecao.fm, so do not reply this email.\n\nThanks!"
+	${shell_path}/sendEmail -f ${email_sender} -t ${email_reciver} -s ${email_smtphost} -u ${email_title} -xu ${email_username} -xp ${email_password} -m ${email_content}
+fi
+
