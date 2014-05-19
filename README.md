@@ -109,7 +109,7 @@ Note that installing app from your own server should respect the protocol named 
 This script is similar to "ipa-publish". Both of them are using to publish app to somewhere. But this script will publish app to [fir.im](http://fir.im). So it is more easier to use, as you don't need a special server and FTP. You can use it without any configration, unless you want to send email to notify somebody.
 
 ####Configure
-If you want to send email to notify somebody. Open the script, and changed the value of "email_reciver". This field may contain one or more than one email.
+If you want to send email to notify somebody. Open the script, and changed the value of "email_reciver". This field may contain one or more than one emails.
 
 
 ####Usage:
