@@ -119,7 +119,7 @@ If you want to send email to notify somebody. Open the script, and changed the v
 ####Options:
 
 	-d path		the root directory of project
-	-e		send email after publishing
+	-e			send email after publishing
 	-l number	limit of git log, which will be used as change log.
 	-m message	used as chang log
 
@@ -127,7 +127,7 @@ If you want to send email to notify somebody. Open the script, and changed the v
 ####Examples:
 
     ~/xcode-shell/ipa-publish-fir -d . -el20 -m "haha"	#Publish and send email. The change log on fir and in email will be "haha"+<last 20 logs of git>
-    ~/xcode-shell/ipa-publish-fir -d .     		#just publish
+    ~/xcode-shell/ipa-publish-fir -d .     			#just publish
 
 
 ##4.add @2x suffix to image files
