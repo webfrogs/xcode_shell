@@ -3,6 +3,11 @@ Introduce
 ----
 
 This repository contains a series of useful shell scripts which can help you to work effectively when programming for iOS platform.
+####Include:
+* build .ipa package
+* publish .ipa file to fir.im or your own server
+* send email
+
 
 
 Necessary
@@ -12,6 +17,7 @@ Necessary
 
 * Mac OS X
 * "Command Line Tools" of xcode
+* ruby with "json" package installed
 
 
 
@@ -84,7 +90,44 @@ You can also assign a specific configuration by using -c option.
 
 ##3.publish project
 
-**ipa-publish**: I will write it later.
+###ipa-publish
+####Configure
+You must configure the script before using at the first time. Open it in any text editor and input you own configurations. Such as ftp address, app download url, email sender and email receiver. After that you can run this script to publish app to your own server.
+Note that installing app from your own server should respect the protocol named "itms-services". To learn more about "itms-services" you can click blog [Wireless AdHoc Distribution](http://gknops.github.io/adHocGenerate/)(English) or blog [ios实现itms-services协议企业内发布或者越狱发布](http://blog.csdn.net/wyq5119275/article/details/16946009)(中文).
+
+####Usage:
+
+	ipa-publish <project root path> [y <should send notification email>]
+
+####Examples:
+
+    ~/xcode-shell/ipa-publish . y   #publish and send email
+    ~/xcode-shell/ipa-publish .     #just publish
+
+
+###ipa-publish-fir
+This script is similar to "ipa-publish". Both of them are using to publish app to somewhere. But this script will publish app to [fir.im](http://fir.im). So it is more easier to use, as you don't need a special server and FTP. You can use it without any configration, unless you want to send email to notify somebody.
+
+####Configure
+If you want to send email to notify somebody. Open the script, and changed the value of "email_reciver". This field may contain one or more than one emails.
+
+
+####Usage:
+
+	ipa-publish-fir [-d directory>] [-e] [-l number] [-m message]
+
+####Options:
+
+	-d path		the root directory of project
+	-e			send email after publishing
+	-l number	limit of git log, which will be used as change log.
+	-m message	used as chang log
+
+
+####Examples:
+
+    ~/xcode-shell/ipa-publish-fir -d . -el20 -m "haha"	#Publish and send email. The change log on fir and in email will be "haha"+<last 20 logs of git>
+    ~/xcode-shell/ipa-publish-fir -d .     			#just publish
 
 
 ##4.add @2x suffix to image files
