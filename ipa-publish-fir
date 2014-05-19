@@ -33,7 +33,7 @@
 #以下是邮箱的相关设置，jiecao.fm 提供了一个可以直接使用的邮箱账号，请不要去更改邮箱密码，以便他人使用
 #更改收件人就可直接使用
 #收件人，多个收件人以空格分隔
-email_reciver="zhoujun@jiecao.fm shannonchou@sina.com"
+email_reciver="all@jiecao.fm"
 #发送者邮箱
 email_sender=xcodeshell@jiecao.fm
 #邮箱用户名
