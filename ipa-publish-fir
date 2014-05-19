@@ -62,30 +62,28 @@ cd $current_path
 
 
 #参数判断
-if [ $# != 2 ] && [ $# != 1 ];then
-	echo "Number of params error! Need one or two params!"
-	echo "1.root path of project(necessary) 2.should send email after upload?y/n(default is n)"
-	exit
-elif [ ! -d $1 ];then
-	echo "The param must be a dictionary."
-	exit	
-	
-fi
-
 should_email=n
-
-if [ $# = 2 ];then
-	should_email=$2
-	if [ $should_email != y ] && [ $should_email != n ];then
-		echo "Error! The Second Param must be y or n!"
-		exit
-	fi
-fi
-
+git_log_limit=0
+project_path=
+change_msg=
+while getopts el:d:m: opt
+do
+    case "$opt" in
+        e)  should_email=y;;
+        l)  git_log_limit="$OPTARG";;
+        d)  project_path="$OPTARG";;
+        m)  change_msg="$OPTARG";;
+        \?)		# unknown flag
+        echo >&2 \
+        "usage: $0 [-d directory>] [-e] [-l number] [-m message]"
+        exit 1;;
+    esac
+done
+shift `expr $OPTIND - 1`
 
 
 #工程绝对路径
-cd $1
+cd $project_path
 project_path=$(pwd)
 
 #判断所输入路径是否是xcode工程的根路径
@@ -103,7 +101,6 @@ if [ $rtnValue != 0 ];then
 	echo "Error!! No ipa files exists.Please run the \"ipa-build\" shell script first"
 	exit
 fi
-
 
 #build文件夹路径
 build_path=${project_path}/build
@@ -152,12 +149,17 @@ fi
 mkdir $target_name
 #拷贝ipa
 cp ./ipa-build/*.ipa ./$target_name/${target_name}.ipa
-cp ../Icon@2x.png ./$target_name/${target_name}_logo.png
 cd $target_name
 
+#处理用户输入的消息
+change_msg=`echo $change_msg | tr -d " " | awk '{printf "%s<br/>",$1}'`
+
 #获取git的提交日志
-echo "Fetching the git log..."
-git_log=`git log --pretty=format:"%s" -10 | tr -d " " | awk '{printf "%s<br/>",$1}'`
+git_log=
+if [ $git_log_limit != 0 ];then
+    echo "Fetching the git log..."
+    git_log=`git log --pretty=format:"%s" -$git_log_limit | tr -d " " | awk '{printf "%s<br/>",$1}'`
+fi
 
 #到fir api 查询具体的包上传地址
 echo "Fetching upload url from fir..."
@@ -181,21 +183,23 @@ exit 1
 fi
 
 echo "Finishing uploading and filling in the app information..."
-response=`curl -L "$fir_finish_url?appid=$bundleIdentifier&short=$fir_publish_short_name&version=$bundleShortVersion($bundleVersion)&changelog=$git_log"`
+response=`curl -L "$fir_finish_url?appid=$bundleIdentifier&short=$fir_publish_short_name&version=$bundleShortVersion($bundleVersion)&name=${ipa_name}_v${bundleShortVersion}&changelog=$change_msg$git_log"`
 realShort=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
 
 #拼接完整的下载url，并在浏览器中打开
 pulish_url=$fir_domain/$realShort
 open $pulish_url
 
+build_time=`date`
 
 #发送邮件
 #将之前html的换行方式改为\n
 git_log=`echo ${git_log//<br\/>/\\\n}`
+change_msg=`echo ${change_msg//<br\/>/\\\n}`
 if [ $should_email = y ];then
     echo "Sending email..."
-	email_title="${ipa_name}-iOS客户端更新"
-	email_content="hi,\n\nThe app is updated recently. Use the safari browser on iOS device to download the app. Here is the URL: ${pulish_url} \n\nChange log:\n$git_log \n\n\nThis email is sent by the automantic shell which is created by ccf & jiecao.fm, so do not reply this email.\n\nThanks!"
+	email_title="${ipa_name}V${bundleShortVersion}-iOS客户端更新"
+	email_content="hi,\n\nThe app is updated recently. Use the safari browser on iOS device to download the app. Here is the URL: ${pulish_url} \n\nBuild time:${build_time}\nChange log:\n$change_msg \n$git_log \n\n\nThis email is sent by the automantic shell which is created by ccf & jiecao.fm, so do not reply this email.\n\nThanks!"
 	${shell_path}/sendEmail -f ${email_sender} -t ${email_reciver} -s ${email_smtphost} -u ${email_title} -xu ${email_username} -xp ${email_password} -m ${email_content}
 fi
 

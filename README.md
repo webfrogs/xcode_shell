@@ -109,17 +109,25 @@ Note that installing app from your own server should respect the protocol named 
 This script is similar to "ipa-publish". Both of them are using to publish app to somewhere. But this script will publish app to [fir.im](http://fir.im). So it is more easier to use, as you don't need a special server and FTP. You can use it without any configration, unless you want to send email to notify somebody.
 
 ####Configure
-If you want to send email to notify somebody. Open the script, and changed the value of "email_reciver". This field may contain one or more than one email.
+If you want to send email to notify somebody. Open the script, and changed the value of "email_reciver". This field may contain one or more than one emails.
 
 
 ####Usage:
 
-	ipa-publish-fir <project root path> [y <should send notification email>]
+	ipa-publish [-d directory>] [-e] [-l number] [-m message]
+
+####Options:
+
+	-d path		the root directory of project
+	-e		send email after publishing
+	-l number	limit of git log, which will be used as change log.
+	-m message	used as chang log
+
 
 ####Examples:
 
-    ~/xcode-shell/ipa-publish-fir . y   #publish and send email
-    ~/xcode-shell/ipa-publish-fir .     #just publish
+    ~/xcode-shell/ipa-publish -d . -el20 -m "haha"	#Publish and send email. The change log on fir and in email will be "haha"+<last 20 logs of git>
+    ~/xcode-shell/ipa-publish -d .     			#just publish
 
 
 ##4.add @2x suffix to image files
