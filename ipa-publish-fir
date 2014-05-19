@@ -104,7 +104,6 @@ if [ $rtnValue != 0 ];then
 	exit
 fi
 
-
 #build文件夹路径
 build_path=${project_path}/build
 
@@ -181,21 +180,22 @@ exit 1
 fi
 
 echo "Finishing uploading and filling in the app information..."
-response=`curl -L "$fir_finish_url?appid=$bundleIdentifier&short=$fir_publish_short_name&version=$bundleShortVersion($bundleVersion)&changelog=$git_log"`
+response=`curl -L "$fir_finish_url?appid=$bundleIdentifier&short=$fir_publish_short_name&version=$bundleShortVersion($bundleVersion)&name=${ipa_name}_v_${bundleShortVersion}&changelog=$git_log"`
 realShort=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
 
 #拼接完整的下载url，并在浏览器中打开
 pulish_url=$fir_domain/$realShort
 open $pulish_url
 
+build_time=`date`
 
 #发送邮件
 #将之前html的换行方式改为\n
 git_log=`echo ${git_log//<br\/>/\\\n}`
 if [ $should_email = y ];then
     echo "Sending email..."
-	email_title="${ipa_name}-iOS客户端更新"
-	email_content="hi,\n\nThe app is updated recently. Use the safari browser on iOS device to download the app. Here is the URL: ${pulish_url} \n\nChange log:\n$git_log \n\n\nThis email is sent by the automantic shell which is created by ccf & jiecao.fm, so do not reply this email.\n\nThanks!"
+	email_title="${ipa_name}V${bundleShortVersion}-iOS客户端更新"
+	email_content="hi,\n\nThe app is updated recently. Use the safari browser on iOS device to download the app. Here is the URL: ${pulish_url} \n\nBuild time:${build_time}\nChange log:\n$git_log \n\n\nThis email is sent by the automantic shell which is created by ccf & jiecao.fm, so do not reply this email.\n\nThanks!"
 	${shell_path}/sendEmail -f ${email_sender} -t ${email_reciver} -s ${email_smtphost} -u ${email_title} -xu ${email_username} -xp ${email_password} -m ${email_content}
 fi
 
