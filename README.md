@@ -114,12 +114,20 @@ If you want to send email to notify somebody. Open the script, and changed the v
 
 ####Usage:
 
-	ipa-publish-fir <project root path> [y <should send notification email>]
+	ipa-publish [-d directory>] [-e] [-l number] [-m message]
+
+####Options:
+
+	-d path		the root directory of project
+	-e		send email after publishing
+	-l number	limit of git log, which will be used as change log.
+	-m message	used as chang log
+
 
 ####Examples:
 
-    ~/xcode-shell/ipa-publish-fir . y   #publish and send email
-    ~/xcode-shell/ipa-publish-fir .     #just publish
+    ~/xcode-shell/ipa-publish -d . -el20 -m "haha"	#Publish and send email. The change log on fir and in email will be "haha"+<last 20 logs of git>
+    ~/xcode-shell/ipa-publish -d .     			#just publish
 
 
 ##4.add @2x suffix to image files
