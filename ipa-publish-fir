@@ -49,8 +49,9 @@ email_smtphost=smtp.exmail.qq.com
 
 #fir 相关url
 fir_domain="http://fir.im"
-fir_lookup_url="$fir_domain/api/upload_url"
+fir_lookup_url="$fir_domain/api/v2/app/info"
 fir_finish_url="$fir_domain/api/finish"
+fir_token="nu4s06BnAoHqugPRdEShv0lfRq7e9HahWL1kybwq"
 
 #获取shell文件所在的绝对路径
 current_path=$(pwd)
@@ -161,34 +162,41 @@ if [ $git_log_limit != 0 ];then
     git_log=`git log --pretty=format:"%s" -$git_log_limit | tr -d " " | awk '{printf "%s<br/>",$1}'`
 fi
 
+echo "=====  bundleIdentifier is $bundleIdentifier  ======"
 #到fir api 查询具体的包上传地址
 echo "Fetching upload url from fir..."
-response=`curl -L "$fir_lookup_url?appid=$bundleIdentifier"`
+echo "do fetch $fir_lookup_url/$bundleIdentifier?token=$fir_token"
+response=`curl "$fir_lookup_url/$bundleIdentifier?token=$fir_token"`
+echo $response
 #网络请求结果判断
 rtnValue=$?
 if [ $rtnValue != 0 ];then
 exit 1
 fi
 
-fir_publish_url=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['postFile']"`
-fir_publish_icon_url=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['postIcon']"`
-fir_publish_short_name=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
+fir_publish_url=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['bundle']['pkg']['url']"`
+echo $fir_publish_url
+fir_publish_key=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['bundle']['pkg']['key']"`
+fir_publish_token=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['bundle']['pkg']['token']"`
+realShort=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
+echo $realShort
 
 #上传ipa包，并获取最终的url short name
 echo "Uploading the ipa file..."
-curl -LT ${target_name}.ipa "$fir_publish_url"
+curl -F file=@${target_name}.ipa -F "key=$fir_publish_key" -F "token=$fir_publish_token" $fir_publish_url
 rtnValue=$?
 if [ $rtnValue != 0 ];then
 exit 1
 fi
 
 echo "Finishing uploading and filling in the app information..."
-response=`curl -L "$fir_finish_url?appid=$bundleIdentifier&short=$fir_publish_short_name&version=$bundleShortVersion($bundleVersion)&name=${ipa_name}_v${bundleShortVersion}&changelog=$change_msg$git_log"`
-realShort=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
+# response=`curl -L "$fir_finish_url?appid=$bundleIdentifier&short=$fir_publish_short_name&version=$bundleShortVersion($bundleVersion)&name=${ipa_name}_v${bundleShortVersion}&changelog=$change_msg$git_log"`
+# realShort=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
 
 #拼接完整的下载url，并在浏览器中打开
 pulish_url=$fir_domain/$realShort
-open $pulish_url
+echo $pulish_url
+# open $pulish_url
 
 build_time=`date`
 
