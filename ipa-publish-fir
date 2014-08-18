@@ -27,7 +27,6 @@
 # 修改人：Shannon Chou
 # 修改内容：在原ipa-publish 的基础上改为ipa-publish-fir，用于将app 发布到fir.im上测试
 #--------------------------------------------
-
 #须配置内容  start
 
 #以下是邮箱的相关设置，jiecao.fm 提供了一个可以直接使用的邮箱账号，请不要去更改邮箱密码，以便他人使用
@@ -134,6 +133,8 @@ target_name=$(/usr/libexec/PlistBuddy -c "print CFBundleName" ${app_infoplist_pa
 #取CFBundleDisplayName
 display_name=$(/usr/libexec/PlistBuddy -c "print CFBundleDisplayName" ${app_infoplist_path})
 
+echo "App $display_name版本号为: $bundleShortVersion, 构建号为: $bundleVersion."
+
 #删除临时文件夹
 cd ..
 rm -rf ${tmpfoldername}
@@ -179,7 +180,9 @@ echo $fir_publish_url
 fir_publish_key=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['bundle']['pkg']['key']"`
 fir_publish_token=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['bundle']['pkg']['token']"`
 realShort=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
-echo $realShort
+#第一次请求得到的 Appid, 用来最后更新 App 的信息.
+fir_app_id=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['id']"`
+
 
 #上传ipa包，并获取最终的url short name
 echo "Uploading the ipa file..."
@@ -190,8 +193,9 @@ exit 1
 fi
 
 echo "Finishing uploading and filling in the app information..."
-# response=`curl -L "$fir_finish_url?appid=$bundleIdentifier&short=$fir_publish_short_name&version=$bundleShortVersion($bundleVersion)&name=${ipa_name}_v${bundleShortVersion}&changelog=$change_msg$git_log"`
-# realShort=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
+echo "Updateing app info."
+response=`curl -X PUT -H "Content-Length: 0" -L "http://fir.im/api/v2/app/$fir_app_id?token=$fir_token&version=$bundleVersion&versionShort=$bundleShortVersion" -v`
+realShort=`ruby -e "require 'json'; iJson = JSON.parse '${response}'; puts iJson['short']"`
 
 #拼接完整的下载url，并在浏览器中打开
 pulish_url=$fir_domain/$realShort
