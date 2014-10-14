@@ -72,6 +72,8 @@ while getopts $param_pattern optname
 
 		cd $tmp_optarg
 		output_path=$(pwd)
+		cd ${project_path}
+		
 		if [ ! -d $output_path ];then
 			echo "Error!The value of option o must be an exist directory."
 			exit 2
