@@ -187,7 +187,7 @@ compiled_path=${build_path}/${appdirname}
 
 #是否clean
 if [ "$should_clean" = "y" ];then
-	xcodebuild clean
+	xcodebuild clean -configuration ${build_config}
 fi
 
 #组合编译命令
@@ -202,12 +202,12 @@ if [ "$build_workspace" != "" ];then
 	
 	build_cmd=${build_cmd}' -workspace '${build_workspace}' -scheme '${build_scheme}' -configuration '${build_config}' CONFIGURATION_BUILD_DIR='${compiled_path}' ONLY_ACTIVE_ARCH=NO'
 
-	else
+else
 	#编译project
 	build_cmd=${build_cmd}' -configuration '${build_config}
 
 	if [ "$build_target" != "" ];then
-	build_cmd=${build_cmd}' -target '${build_target}
+		build_cmd=${build_cmd}' -target '${build_target}
 	fi
 	
 fi

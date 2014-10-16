@@ -73,7 +73,7 @@ while getopts $param_pattern optname
 		cd $tmp_optarg
 		output_path=$(pwd)
 		cd ${project_path}
-		
+
 		if [ ! -d $output_path ];then
 			echo "Error!The value of option o must be an exist directory."
 			exit 2
@@ -156,7 +156,7 @@ compiled_path=${build_path}/${appdirname}
 
 #是否clean
 if [ "$should_clean" = "y" ];then
-	xcodebuild clean
+	xcodebuild clean -configuration ${build_config}
 fi
 
 
@@ -172,7 +172,7 @@ if [ "$build_workspace" != "" ];then
 	
 	build_cmd=${build_cmd}' -workspace '${build_workspace}' -scheme '${build_scheme}' -configuration '${build_config}' CONFIGURATION_BUILD_DIR='${compiled_path}' ONLY_ACTIVE_ARCH=NO'
 
-	else
+else
 	#编译project
 	build_cmd=${build_cmd}' -configuration '${build_config}
 
