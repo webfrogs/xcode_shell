@@ -1,5 +1,10 @@
+Note
+=====
+
+Highly suggest you use [**fastlane**(https://github.com/fastlane/fastlane)](https://github.com/fastlane/fastlane) instead of this project.
+
 Introduce
-===========
+======
 ----
 
 This repository contains a series of useful shell scripts which can help you to work effectively when programming for iOS platform.
