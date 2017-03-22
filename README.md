@@ -1,7 +1,10 @@
+
 Note
 =====
 
-Highly suggest you use [**fastlane**(https://github.com/fastlane/fastlane)](https://github.com/fastlane/fastlane) instead of this project.
+Highly suggest you use [**fastlane**](https://github.com/fastlane/fastlane) instead of this project.
+
+If you want to publish ipa to fir, use official project [**fir-cli**](https://github.com/FIRHQ/fir-cli) instead of this project. Script ipa-publish-fir is deprecated.
 
 Introduce
 ======
@@ -55,11 +58,11 @@ This ipa-build script is created to compile the xcode project and package the pr
 	-w			build xcode workspace	
 	-s NAME		the schemal to be used for compiling
 	-n			clean the project before compling
-	
+
 ####Example:
 
 ***build project***
-    
+​    
 If you have an iOS project in the path ~/iphone, and the ipa-build script is put in the path ~/xcode-shell.You want to build this project with 'Release' configuration.Just using script like this:
 
 	cd ~/iphone
@@ -76,7 +79,7 @@ If ~/iphone is a xcode workspace and the scheme used for compile named 'test'.Th
 
 You can also assign a specific configuration by using -c option.
 
-	
+
 	Note:If script executed successfully,an ipa file is created in the path: <project path>/build/ipa-build.
 
 ##2.compile project used CocoaPods

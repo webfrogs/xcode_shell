@@ -27,18 +27,26 @@
 # 修改人：Shannon Chou
 # 修改内容：在原ipa-publish 的基础上改为ipa-publish-fir，用于将app 发布到fir.im上测试
 #--------------------------------------------
+# 修改日期：2017/03/22
+# 修改人：Shannon Chou
+# 修改内容：修改配置部分, 该脚本已废弃，建议使用fir 官方cli 工具
+#--------------------------------------------
+
+
+
+
+
 #须配置内容  start
 
-#以下是邮箱的相关设置，jiecao.fm 提供了一个可以直接使用的邮箱账号，请不要去更改邮箱密码，以便他人使用
-#更改收件人就可直接使用
+#以下是邮箱的相关设置
 #收件人，多个收件人以空格分隔
-email_reciver="zhoujun@jiecao.fm shannonchou@sina.com"
+email_reciver=""
 #发送者邮箱
-email_sender=xcodeshell@jiecao.fm
+email_sender=
 #邮箱用户名
-email_username=xcodeshell@jiecao.fm
+email_username=
 #邮箱密码
-email_password=jiecao.fm1
+email_password=
 #smtp服务器地址
 email_smtphost=smtp.exmail.qq.com
 
