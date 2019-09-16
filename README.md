@@ -140,7 +140,7 @@ If you want to send email to notify somebody. Open the script, and changed the v
 
 ##4.add @2x suffix to image files
 
-When programming for retina device of iOS,the image file you used should add the suffix of @2x. Using the script "add2x" can help you do this automaticly.
+When programming for retina device of iOS,the image file you used should add the suffix of @2x. Using the script "add2x" can help you do this automatically.
 
 **add2x**: add suffix of @2x to all the image files(just png and jpg file) .This script work in the current directory.
 
